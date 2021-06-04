@@ -1,2 +1,4 @@
 # DS files
 .DS_STORE
+# models
+models/
