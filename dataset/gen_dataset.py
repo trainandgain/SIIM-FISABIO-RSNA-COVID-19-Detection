@@ -85,6 +85,6 @@ class OD_SIIM(Dataset):
         return image, target, image_id
 
 
-def dataset(name, df, train_ids, train_transform):
+def dataset(name, df, train_ids, transform):
     d = globals().get(name)
     return(d(**_))

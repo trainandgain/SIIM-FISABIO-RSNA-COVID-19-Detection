@@ -7,8 +7,14 @@ import utils
 import utils.config
 import utils.device
 import utils.input
+from model.gen_model import get_model
+from dataset.gen_dataloader import get_dataloader
+from optimiser.gen_optimiser import get_optimiser
+from scheduler.gen_scheduler  import get_scheduler
+from transform.gen_transform import get_transform
+import math
 
-def train_one_cycle(config, model, dataloader, optimiser, epoch)
+def train_one_cycle(config, model, dataloader, optimiser, epoch):
     """
     Run one epoch of training, backpropogation and optimisation.
     """
@@ -19,7 +25,7 @@ def train_one_cycle(config, model, dataloader, optimiser, epoch)
     len_dataset = len(dataloader.dataset)
     step = math.ceil(len_dataset / batch_size)
     # progress bar
-    train_prog_bar = tqdm(self.train, total=step)
+    train_prog_bar = tqdm(dataloader, total=step)
     running_loss = 0
 
     with torch.set_grad_enabled(True):
@@ -60,40 +66,40 @@ def val_one_cycle(config, model, dataloader, optimiser, epoch, device):
         In model.train() mode, model(images)  is returning losses.
         We are using model.eval() mode --> it will return boxes and scores.
      """
-        model.eval()
-         batch_size = config['val']['batch_size']
-        len_dataset = len(dataloader.dataset)
-        step = math.ceil(len_dataset / batch_size)
-        valid_prog_bar = tqdm(self.valid, total=step)
-        with torch.no_grad():
+    model.eval()
+    batch_size = config['val']['batch_size']
+    len_dataset = len(dataloader.dataset)
+    step = math.ceil(len_dataset / batch_size)
+    valid_prog_bar = tqdm(dataloader, total=step)
+    with torch.no_grad():
 
-            metric = 0
+        metric = 0
 
-            for batch_num, (images, targets, idx) in enumerate(valid_prog_bar):
-                # send to devices
-                images = images.to(device)
-                # get predictions
-                outputs = model(images)
-                # get metric
-                for i, image in enumerate(images):
-                    gt_boxes = targets[i]['boxes'].data.cpu().numpy()
-                    boxes = outputs[i]['boxes'].data.cpu().numpy()
-                    scores = outputs[i]['scores'].detach().cpu().numpy()
-                    precision=1
-                    avg=1
-                    # Show the current metric
-                    valid_pbar_desc = f"Current Precision: {precision:.4f}"
-                    valid_prog_bar.set_description(desc=valid_pbar_desc)
+        for batch_num, (images, targets, idx) in enumerate(valid_prog_bar):
+            # send to devices
+            images = images.to(device)
+            # get predictions
+            outputs = model(images)
+            # get metric
+            for i, image in enumerate(images):
+                gt_boxes = targets[i]['boxes'].data.cpu().numpy()
+                boxes = outputs[i]['boxes'].data.cpu().numpy()
+                scores = outputs[i]['scores'].detach().cpu().numpy()
+                precision=1
+                avg=1
+                # Show the current metric
+                valid_pbar_desc = f"Current Precision: {precision:.4f}"
+                valid_prog_bar.set_description(desc=valid_pbar_desc)
 
-            print(f"Validation metric: {avg:.4f}")
+        print(f"Validation metric: {avg:.4f}")
 
-            # Free up memory
-            del images, outputs, gt_boxes, boxes, scores, preds_sorted_idx, preds_sorted_boxes, precision
-            torch.cuda.empty_cache()
+        # Free up memory
+        del images, outputs, gt_boxes, boxes, scores ,precision
+        torch.cuda.empty_cache()
 
 
 
-def train(config, model, dataloaders, optimser, scheduler, device):
+def train(config, model, dataloaders, optimiser, scheduler, device):
     num_epochs = config['train']['num_epochs']
     for epoch in range(num_epochs):
         # train
@@ -119,7 +125,7 @@ def run(config):
     df = utils.input.get_df(config)
     dataloaders = {split:get_dataloader(config, df, split, get_transform(config, split))
                    for split in ['train', 'val']}
-    train(config, model, dataloaders, optimser, scheduler, DEVICE)
+    train(config, model, dataloaders, optimiser, scheduler, DEVICE)
 
 
 def parse_args():
@@ -131,10 +137,8 @@ def parse_args():
 
 
 if __name__ == '__main__':
+    args = parse_args()
     config = utils.config.load(args.config_file)
     print(config)
     utils.prepare_directories(config)
     run(config)
-
-
-

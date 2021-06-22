@@ -1,19 +1,19 @@
 from torch.utils.data import DataLoader
 import os
 import pandas as pd
-import gen_dataset as gen_dataset
-import gen_collate as gen_collate
+from .gen_dataset import dataset
+from .gen_collate import collate
 
 def get_dataset(name, df, image_ids, transform=None):
    """
     Using the config file we grab the correct dataset.
     Then create a valid and train dataloader.
    """
-   return(gen_dataset.dataset(name, image_ids, df, transform)
+   return(dataset(name, df, image_ids, transform))
 
 
 def get_collate(name):
-    return(gen_collate.collate(name))
+    return(collate(name))
 
 def get_dataloader(config, df, fold, transform=None):
     """
@@ -24,8 +24,8 @@ def get_dataloader(config, df, fold, transform=None):
     else:
         collate_fn = None
     if split == 'train':
-        id_s = df[df.fold!=config['dataset']['val_fold']
+        id_s = df[df.fold!=config['dataset']['val_fold']]
     else:
-        id_s = df[df.fold==config['dataset']['val_fold']
-    dataloader = get_dataset(config['dataset']['name'], df, id_s, transform)
+        id_s = df[df.fold==config['dataset']['val_fold']]
+    dataloader = DataLoader(get_dataset(config['dataset']['name'], df, id_s, transform))
     return(dataloader)
