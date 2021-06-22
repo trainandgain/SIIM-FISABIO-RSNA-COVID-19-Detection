@@ -1,0 +1,140 @@
+import torch
+import os
+from tqdm import tqdm
+import numpy as np
+import argparse
+import utils
+import utils.config
+import utils.device
+import utils.input
+
+def train_one_cycle(config, model, dataloader, optimiser, epoch)
+    """
+    Run one epoch of training, backpropogation and optimisation.
+    """
+    # model train mode
+    model.train()
+
+    batch_size = config['train']['batch_size']
+    len_dataset = len(dataloader.dataset)
+    step = math.ceil(len_dataset / batch_size)
+    # progress bar
+    train_prog_bar = tqdm(self.train, total=step)
+    running_loss = 0
+
+    with torch.set_grad_enabled(True):
+        for batch_num, (images, targets, idx) in enumerate(train_prog_bar):
+            # zero gradient optim
+            optimiser.zero_grad()
+            # send to devices
+            images = images.to(device)
+            tg = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+            # get outputs
+            losses = model(images, tg)
+            # training
+            train_loss = sum(loss for loss in losses.values())
+
+            # Backpropogation
+            train_loss.backward()
+            optimiser.step()
+            # For averaging and reporting later
+            running_loss += train_loss.item()
+
+            # show the current loss to the progress bar
+            train_pbar_desc = f'loss: {train_loss.item():.4f}'
+            train_prog_bar.set_description(desc=train_pbar_desc)
+
+        # average the running loss over all batches and return
+        train_running_loss = running_loss / step
+        print(f"Final Training Loss: {train_running_loss:.4f}")
+
+        # free memory
+        del images, tg, losses, train_loss
+        # free up cache
+        torch.cuda.empty_cache()
+
+def val_one_cycle(config, model, dataloader, optimiser, epoch, device):
+    """
+        Runs one epoch of prediction.
+        In model.train() mode, model(images)  is returning losses.
+        We are using model.eval() mode --> it will return boxes and scores.
+     """
+        model.eval()
+         batch_size = config['val']['batch_size']
+        len_dataset = len(dataloader.dataset)
+        step = math.ceil(len_dataset / batch_size)
+        valid_prog_bar = tqdm(self.valid, total=step)
+        with torch.no_grad():
+
+            metric = 0
+
+            for batch_num, (images, targets, idx) in enumerate(valid_prog_bar):
+                # send to devices
+                images = images.to(device)
+                # get predictions
+                outputs = model(images)
+                # get metric
+                for i, image in enumerate(images):
+                    gt_boxes = targets[i]['boxes'].data.cpu().numpy()
+                    boxes = outputs[i]['boxes'].data.cpu().numpy()
+                    scores = outputs[i]['scores'].detach().cpu().numpy()
+                    precision=1
+                    avg=1
+                    # Show the current metric
+                    valid_pbar_desc = f"Current Precision: {precision:.4f}"
+                    valid_prog_bar.set_description(desc=valid_pbar_desc)
+
+            print(f"Validation metric: {avg:.4f}")
+
+            # Free up memory
+            del images, outputs, gt_boxes, boxes, scores, preds_sorted_idx, preds_sorted_boxes, precision
+            torch.cuda.empty_cache()
+
+
+
+def train(config, model, dataloaders, optimser, scheduler, device):
+    num_epochs = config['train']['num_epochs']
+    for epoch in range(num_epochs):
+        # train
+        train_one_cycle(config, model, dataloaders['train'],
+                    optimiser, epoch, device)
+        # val
+        val_one_cycle(config, model, dataloaders['val'],
+                  optimiser, epoch, device)
+        # scheduler
+        if scheduler:
+            scheduler.step()
+        utils.checkpoints.save(config, model, optimiser, epoch)
+
+
+def run(config):
+    # directories
+    input_dir = config['directory']['input']
+    DEVICE = utils.device.get_device()
+    # get elements
+    model = get_model(config).to(DEVICE)
+    optimiser = get_optimiser(config, model.parameters())
+    scheduler = get_scheduler(config, optimiser)
+    df = utils.input.get_df(config)
+    dataloaders = {split:get_dataloader(config, df, split, get_transform(config, split))
+                   for split in ['train', 'val']}
+    train(config, model, dataloaders, optimser, scheduler, DEVICE)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Model Trainer')
+    parser.add_argument('--config', dest='config_file',
+                        help='configuration filename',
+                        default=None, type=str)
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    config = utils.config.load(args.config_file)
+    print(config)
+    utils.prepare_directories(config)
+    run(config)
+
+
+
