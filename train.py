@@ -6,7 +6,9 @@ import argparse
 import utils
 import utils.config
 import utils.device
-import utils.input
+import utils.input 
+import utils.checkpoint
+from utils.logs import Logman
 from model.gen_model import get_model
 from dataset.gen_dataloader import get_dataloader
 from optimiser.gen_optimiser import get_optimiser
@@ -46,7 +48,13 @@ def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
             optimiser.step()
             # For averaging and reporting later
             running_loss += train_loss.item()
-
+            # logging
+            if logman:
+                logman.log({'type': 'train', 
+                            'epoch': epoch, 
+                            'batch': batch_num, 
+                            'loss': train_loss.item()
+                        })
             # show the current loss to the progress bar
             train_pbar_desc = f'loss: {train_loss.item():.4f}'
             train_prog_bar.set_description(desc=train_pbar_desc)
@@ -87,6 +95,14 @@ def val_one_cycle(config, model, dataloader, optimiser, epoch, device):
                 scores = outputs[i]['scores'].detach().cpu().numpy()
                 precision=1
                 avg=1
+                # logging
+                if logman:
+                    logman.log({'type': 'val', 
+                                'epoch': epoch, 
+                                'batch': batch_num, 
+                                'image_precision': precision,
+                                'average_precision': avg
+                            })
                 # Show the current metric
                 valid_pbar_desc = f"Current Precision: {precision:.4f}"
                 valid_prog_bar.set_description(desc=valid_pbar_desc)
@@ -104,15 +120,18 @@ def train(config, model, dataloaders, optimiser, scheduler, device):
     for epoch in range(num_epochs):
         # train
         train_one_cycle(config, model, dataloaders['train'],
-                    optimiser, epoch, device)
+                        optimiser, epoch, device)
         # val
         val_one_cycle(config, model, dataloaders['val'],
-                  optimiser, epoch, device)
+                      optimiser, epoch, device)
         # scheduler
         if scheduler:
             scheduler.step()
-        utils.checkpoints.save(config, model, optimiser, epoch)
-
+        utils.checkpoint.save(config, model, optim, scheduler, epoch)
+    # end logging
+    logman.log({'type': 'final', 
+                'final_loss': current_train_loss, 
+                'final_metric': current_precision})
 
 def run(config):
     # directories
@@ -140,5 +159,5 @@ if __name__ == '__main__':
     args = parse_args()
     config = utils.config.load(args.config_file)
     print(config)
-    # utils.prepare_directories(config)
+    logman = Logman(config, config['output']['dir'], config['model']['name'])
     run(config)

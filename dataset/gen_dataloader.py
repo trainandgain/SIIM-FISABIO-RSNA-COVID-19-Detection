@@ -29,5 +29,5 @@ def get_dataloader(config, df, split, transform=None):
         id_s = df[df.fold==config['data']['params']['val_fold']].id.values
     dataloader = DataLoader(get_dataset(config['data']['name'], df, id_s, transform),
                             collate_fn=collate_fn, 
-                            batch_size=config['data']['params']['batch_size'])                    
+                            batch_size=config['train']['batch_size'])                    
     return(dataloader)

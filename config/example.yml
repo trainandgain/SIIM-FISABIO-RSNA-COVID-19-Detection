@@ -6,15 +6,14 @@ data:
   collate_name: 'OD_collate'
   params:
     val_fold: 4
-    batch_size: 2
 
 model:
   name: 'FasterRCNNDetector'
 
 train:
   dir: 
-  batch_size: 32
-  num_epochs: 41
+  batch_size: 2
+  num_epochs: 30
 
 loss:
   name: ''
@@ -33,3 +32,6 @@ transform:
   name: 'transform'
   params:
     reshape_size: 800
+
+output:
+  dir: 'out/'
