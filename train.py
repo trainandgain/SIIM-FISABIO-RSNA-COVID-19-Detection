@@ -14,7 +14,7 @@ from scheduler.gen_scheduler  import get_scheduler
 from transform.gen_transform import get_transform
 import math
 
-def train_one_cycle(config, model, dataloader, optimiser, epoch):
+def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
     """
     Run one epoch of training, backpropogation and optimisation.
     """
@@ -116,13 +116,13 @@ def train(config, model, dataloaders, optimiser, scheduler, device):
 
 def run(config):
     # directories
-    input_dir = config['directory']['input']
+    input_dir = config['data']['input']
     DEVICE = utils.device.get_device()
     # get elements
     model = get_model(config).to(DEVICE)
     optimiser = get_optimiser(config, model.parameters())
-    scheduler = get_scheduler(config, optimiser)
-    df = utils.input.get_df(config)
+    scheduler = get_scheduler(config, optimiser, -1)
+    df = utils.input.get_dfs(config)
     dataloaders = {split:get_dataloader(config, df, split, get_transform(config, split))
                    for split in ['train', 'val']}
     train(config, model, dataloaders, optimiser, scheduler, DEVICE)
@@ -140,5 +140,5 @@ if __name__ == '__main__':
     args = parse_args()
     config = utils.config.load(args.config_file)
     print(config)
-    utils.prepare_directories(config)
+    # utils.prepare_directories(config)
     run(config)

@@ -1,4 +1,9 @@
 from torch.utils.data import Dataset
+import pydicom
+from pydicom.pixel_data_handlers.util import apply_voi_lut
+import numpy as np
+import albumentations as A
+import torch
 """
 This python file holds the datasets of the project.
 Copy and paste your datasets to this file.
@@ -16,10 +21,10 @@ class OD_SIIM(Dataset):
         self.df = df
         # augmentations
         self.transforms = transforms
-
+    
     def __len__(self) -> int:
         return(len(self.image_ids))
-
+    
     @staticmethod
     def dicom2array(path: str, voi_lut=True, fix_monochrome=True):
         dicom = pydicom.read_file(path)
@@ -35,7 +40,7 @@ class OD_SIIM(Dataset):
         data = data - np.min(data)
         data = data / np.max(data)
         return data.astype(np.float32)
-
+    
     def load_bbox_labels(self, image_id, shape):
         row, col = shape
         records = self.df[self.df['id'] == image_id]
@@ -43,16 +48,16 @@ class OD_SIIM(Dataset):
         for box in records.boxes.values:
             if box:
                 for b in box:
-                    to_append = np.clip([b['x']/col, b['y']/row, (b['x']+b['width'])/col,
+                    to_append = np.clip([b['x']/col, b['y']/row, (b['x']+b['width'])/col, 
                                          (b['y']+b['height'])/row], 0, 1.0)
-                    temp = A.convert_bbox_from_albumentations(to_append,
+                    temp = A.convert_bbox_from_albumentations(to_append, 
                                                               'pascal_voc',
-                                                              rows=row, cols=col)
+                                                              rows=row, cols=col) 
                     boxes.append(temp)
-
+        
         labels = [records['integer_label'].values[0]] * len(boxes)
         return(boxes, labels)
-
+    
     def __getitem__(self, idx: int):
         # retrieve idx data
         image_id = self.image_ids[idx]
@@ -79,12 +84,14 @@ class OD_SIIM(Dataset):
             image = sample['image']
             target['boxes'] = torch.tensor(sample['bboxes'])
             if target["boxes"].shape[0] != 0:
-                target['boxes'] = torch.stack(tuple(map(torch.tensor,
+                target['boxes'] = torch.stack(tuple(map(torch.tensor, 
                                                  zip(*sample['bboxes'])))).permute(1, 0)
             target['labels'] = torch.tensor(sample['labels'])
+        
+        
         return image, target, image_id
 
 
 def dataset(name, df, train_ids, transform):
     d = globals().get(name)
-    return(d(**_))
+    return(d(train_ids, df, transform))

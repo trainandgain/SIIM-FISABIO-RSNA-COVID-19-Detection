@@ -1,0 +1,35 @@
+data:
+  name: 'OD_SIIM'
+  input: 'C:\Users\Admin\Git\SIIM\train'
+  df:
+    path: 'input/id_s.csv'
+  collate_name: 'OD_collate'
+  params:
+    val_fold: 4
+    batch_size: 2
+
+model:
+  name: 'FasterRCNNDetector'
+
+train:
+  dir: 
+  batch_size: 32
+  num_epochs: 41
+
+loss:
+  name: ''
+
+optimiser:
+  name: 'adamW'
+  params:
+    lr: 0.0005
+
+scheduler:
+  name: 'step'
+  params:
+    step_size: 2
+  
+transform:
+  name: 'transform'
+  params:
+    reshape_size: 800

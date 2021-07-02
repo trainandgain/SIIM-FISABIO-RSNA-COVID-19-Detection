@@ -35,4 +35,4 @@ def cosine(optimizer, last_epoch, T_max=50, eta_min=0.00001, **_):
 
 def get_scheduler(config, optimizer, last_epoch):
   func = globals().get(config['scheduler']['name'])
-  return func(optimizer, last_epoch, **cconfig['scheduler']['params'])
+  return func(optimizer, last_epoch, **config['scheduler']['params'])
