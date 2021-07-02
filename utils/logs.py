@@ -22,9 +22,8 @@ class Logman(object):
         # assertions
         assert self.hyper['model']
         # init store
-        self.store = {'model': self.hyper['model']}
-        self.store.update({k: v for k, v in self.hyper.items() if (k != 'type' and k != 'model')})
-        self.store['data'] = []
+        self.store = self.hyper
+        self.store['logs'] = []
         # save empty logs
         self.save_logs()
         
@@ -45,18 +44,18 @@ class Logman(object):
         """
         if data:
             # first log
-            if not self.store['data']:
-                self.store['data'] = [data]
+            if not self.store['logs']:
+                self.store['logs'] = [data]
             else:
                 # check for final
                 if data['type'] == 'final':
                     self.finalise(data)
                 else:
                     # append data to data key in store
-                    self.store['data'].append(data)
+                    self.store['logs'].append(data)
         else:
             # error
-            self.store['data'].append({'type': 'error', 'reason': 'No data present'})
+            self.store['logs'].append({'type': 'error', 'reason': 'No data present'})
     
     def finalise(self, data):
         """

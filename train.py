@@ -67,6 +67,7 @@ def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
         del images, tg, losses, train_loss
         # free up cache
         torch.cuda.empty_cache()
+        return(train_running_loss)
 
 def val_one_cycle(config, model, dataloader, optimiser, epoch, device):
     """
@@ -75,10 +76,11 @@ def val_one_cycle(config, model, dataloader, optimiser, epoch, device):
         We are using model.eval() mode --> it will return boxes and scores.
      """
     model.eval()
-    batch_size = config['val']['batch_size']
+    batch_size = config['train']['batch_size']
     len_dataset = len(dataloader.dataset)
     step = math.ceil(len_dataset / batch_size)
     valid_prog_bar = tqdm(dataloader, total=step)
+    running_prec = 0
     with torch.no_grad():
 
         metric = 0
@@ -106,32 +108,30 @@ def val_one_cycle(config, model, dataloader, optimiser, epoch, device):
                 # Show the current metric
                 valid_pbar_desc = f"Current Precision: {precision:.4f}"
                 valid_prog_bar.set_description(desc=valid_pbar_desc)
-
-        print(f"Validation metric: {avg:.4f}")
-
+                running_prec += precision
+        final_prec = running_prec / step      
+        print(f"Validation metric: {final_prec:.4f}")
         # Free up memory
         del images, outputs, gt_boxes, boxes, scores ,precision
         torch.cuda.empty_cache()
-
+        return(final_prec)
 
 
 def train(config, model, dataloaders, optimiser, scheduler, device):
     num_epochs = config['train']['num_epochs']
     for epoch in range(num_epochs):
         # train
-        train_one_cycle(config, model, dataloaders['train'],
+        final_loss = train_one_cycle(config, model, dataloaders['train'],
                         optimiser, epoch, device)
         # val
-        val_one_cycle(config, model, dataloaders['val'],
+        final_prec = val_one_cycle(config, model, dataloaders['val'],
                       optimiser, epoch, device)
         # scheduler
         if scheduler:
             scheduler.step()
-        utils.checkpoint.save(config, model, optim, scheduler, epoch)
+        utils.checkpoint.save(config, model, optimiser, scheduler, epoch, final_loss, final_prec)
     # end logging
-    logman.log({'type': 'final', 
-                'final_loss': current_train_loss, 
-                'final_metric': current_precision})
+    logman.log({'type': 'final'})
 
 def run(config):
     # directories
