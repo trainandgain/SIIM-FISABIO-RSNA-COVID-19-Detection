@@ -1,9 +1,9 @@
 from .metric_zoo import metric
 
 def get_metric(config):
-    model_name = config['metric']['name']
-    print('Metric Name: ', model_name)
-    return(model(model_name))
+    metric_name = config['metric']['name']
+    print('Metric Name: ', metric_name)
+    return(metric(metric_name))
 
 
 def get_test(name='calculate_image_precision'):

@@ -4,7 +4,7 @@ from numba import jit
 import numpy as np
 
 
-def image_precision(boxes, scores, gt_boxes):
+def image_precision(boxes, scores, gt_boxes, config):
     '''
     https://www.kaggle.com/pestipeti/competition-metric-details-script
     '''
@@ -175,7 +175,7 @@ def image_precision(boxes, scores, gt_boxes):
 
 def metric(name):
     f = globals().get(name)
-    return f()
+    return f
 
 
 if __name__ == '__main__':

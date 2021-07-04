@@ -93,7 +93,7 @@ def val_one_cycle(config, model, dataloader, optimiser, epoch, device, metric):
                 gt_boxes = targets[i]['boxes'].data.cpu().numpy()
                 boxes = outputs[i]['boxes'].data.cpu().numpy()
                 scores = outputs[i]['scores'].detach().cpu().numpy()
-                precision = metric(boxes, scores, gt_boxes)
+                precision = metric(boxes, scores, gt_boxes, config)
                 running_prec += precision
                 # logging
                 if logman:
