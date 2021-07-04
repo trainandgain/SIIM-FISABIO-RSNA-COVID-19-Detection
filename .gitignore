@@ -2,3 +2,5 @@
 .DS_STORE
 # models
 models/
+#out models
+out/
