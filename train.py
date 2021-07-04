@@ -10,6 +10,7 @@ import utils.input
 import utils.checkpoint
 from utils.logs import Logman
 from model.gen_model import get_model
+from metric.gen_metric import get_metric
 from dataset.gen_dataloader import get_dataloader
 from optimiser.gen_optimiser import get_optimiser
 from scheduler.gen_scheduler  import get_scheduler
@@ -69,7 +70,7 @@ def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
         torch.cuda.empty_cache()
         return(train_running_loss)
 
-def val_one_cycle(config, model, dataloader, optimiser, epoch, device):
+def val_one_cycle(config, model, dataloader, optimiser, epoch, device, metric):
     """
         Runs one epoch of prediction.
         In model.train() mode, model(images)  is returning losses.
@@ -82,9 +83,6 @@ def val_one_cycle(config, model, dataloader, optimiser, epoch, device):
     valid_prog_bar = tqdm(dataloader, total=step)
     running_prec = 0
     with torch.no_grad():
-
-        metric = 0
-
         for batch_num, (images, targets, idx) in enumerate(valid_prog_bar):
             # send to devices
             images = images.to(device)
@@ -95,20 +93,20 @@ def val_one_cycle(config, model, dataloader, optimiser, epoch, device):
                 gt_boxes = targets[i]['boxes'].data.cpu().numpy()
                 boxes = outputs[i]['boxes'].data.cpu().numpy()
                 scores = outputs[i]['scores'].detach().cpu().numpy()
-                precision=1
-                avg=1
+                precision = metric(boxes, scores, gt_boxes)
+                running_prec += precision
                 # logging
                 if logman:
                     logman.log({'type': 'val', 
                                 'epoch': epoch, 
                                 'batch': batch_num, 
                                 'image_precision': precision,
-                                'average_precision': avg
                             })
                 # Show the current metric
                 valid_pbar_desc = f"Current Precision: {precision:.4f}"
                 valid_prog_bar.set_description(desc=valid_pbar_desc)
                 running_prec += precision
+                
         final_prec = running_prec / step      
         print(f"Validation metric: {final_prec:.4f}")
         # Free up memory
@@ -117,7 +115,7 @@ def val_one_cycle(config, model, dataloader, optimiser, epoch, device):
         return(final_prec)
 
 
-def train(config, model, dataloaders, optimiser, scheduler, device):
+def train(config, model, dataloaders, optimiser, scheduler, device, metric):
     num_epochs = config['train']['num_epochs']
     for epoch in range(num_epochs):
         # train
@@ -125,7 +123,7 @@ def train(config, model, dataloaders, optimiser, scheduler, device):
                         optimiser, epoch, device)
         # val
         final_prec = val_one_cycle(config, model, dataloaders['val'],
-                      optimiser, epoch, device)
+                      optimiser, epoch, device, metric)
         # scheduler
         if scheduler:
             scheduler.step()
@@ -141,10 +139,11 @@ def run(config):
     model = get_model(config).to(DEVICE)
     optimiser = get_optimiser(config, model.parameters())
     scheduler = get_scheduler(config, optimiser, -1)
+    metric = get_metric(config)
     df = utils.input.get_dfs(config)
     dataloaders = {split:get_dataloader(config, df, split, get_transform(config, split))
                    for split in ['train', 'val']}
-    train(config, model, dataloaders, optimiser, scheduler, DEVICE)
+    train(config, model, dataloaders, optimiser, scheduler, DEVICE, metric)
 
 
 def parse_args():

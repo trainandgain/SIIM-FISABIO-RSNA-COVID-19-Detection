@@ -18,6 +18,12 @@ train:
 loss:
   name: ''
 
+metric:
+  name: "image_precision"
+  params:
+    iou_thresholds: [0.5]
+    form: 'pascal_voc'
+    
 optimiser:
   name: 'adamW'
   params:
