@@ -11,13 +11,14 @@ import utils.checkpoint
 from utils.logs import Logman
 from model.gen_model import get_model
 from metric.gen_metric import get_metric
+from loss.gen_loss import get_loss
 from dataset.gen_dataloader import get_dataloader
 from optimiser.gen_optimiser import get_optimiser
 from scheduler.gen_scheduler  import get_scheduler
 from transform.gen_transform import get_transform
 import math
 
-def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
+def train_one_cycle(config, model, dataloader, optimiser, epoch, device, loss):
     """
     Run one epoch of training, backpropogation and optimisation.
     """
@@ -40,9 +41,9 @@ def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
             tg = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
             # get outputs
-            losses = model(images, tg)
+            out = model(images, tg)
             # training
-            train_loss = sum(loss for loss in losses.values())
+            train_loss = loss(out, images, tg)
 
             # Backpropogation
             train_loss.backward()
@@ -120,12 +121,12 @@ def val_one_cycle(config, model, dataloader, optimiser, epoch, device, metric):
         return(final_prec)
 
 
-def train(config, model, dataloaders, optimiser, scheduler, device, metric):
+def train(config, model, dataloaders, optimiser, scheduler, device, metric, loss):
     num_epochs = config['train']['num_epochs']
     for epoch in range(num_epochs):
         # train
         final_loss = train_one_cycle(config, model, dataloaders['train'],
-                        optimiser, epoch, device)
+                        optimiser, epoch, device, loss)
         # val
         final_prec = val_one_cycle(config, model, dataloaders['val'],
                       optimiser, epoch, device, metric)
@@ -145,10 +146,11 @@ def run(config):
     optimiser = get_optimiser(config, model.parameters())
     scheduler = get_scheduler(config, optimiser, -1)
     metric = get_metric(config)
+    loss = get_loss(config)
     df = utils.input.get_dfs(config)
     dataloaders = {split:get_dataloader(config, df, split, get_transform(config, split))
                    for split in ['train', 'val']}
-    train(config, model, dataloaders, optimiser, scheduler, DEVICE, metric)
+    train(config, model, dataloaders, optimiser, scheduler, DEVICE, metric, loss)
 
 
 def parse_args():

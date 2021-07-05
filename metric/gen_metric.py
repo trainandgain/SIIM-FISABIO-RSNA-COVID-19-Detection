@@ -7,7 +7,7 @@ def get_metric(config):
 
 
 def get_test(name='calculate_image_precision'):
-    print('Model Name: ', name)
+    print('Metric Name: ', name)
     return(metric(name))
 
 if __name__ == '__main__':
