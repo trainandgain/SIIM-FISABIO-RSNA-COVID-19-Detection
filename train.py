@@ -110,7 +110,7 @@ def val_one_cycle(config, model, dataloader, optimiser, epoch, device, metric):
         final_prec = running_prec / step      
         print(f"Validation metric: {final_prec:.4f}")
         # Free up memory
-        del images, outputs, gt_boxes, boxes, scores ,precision
+        del images, outputs, gt_boxes, boxes, scores, precision
         torch.cuda.empty_cache()
         return(final_prec)
 
