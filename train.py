@@ -46,6 +46,11 @@ def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
 
             # Backpropogation
             train_loss.backward()
+            # gradient clipping
+            if config['train']['gradient_clipping']:
+                torch.nn.utils.clip_grad_value_(model.parameters(),
+                **config['train']['gradient_clipping']['params'])
+            # optimiser step
             optimiser.step()
             # For averaging and reporting later
             running_loss += train_loss.item()
