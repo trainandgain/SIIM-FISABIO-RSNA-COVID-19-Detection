@@ -1,5 +1,6 @@
 import torch
 import os
+import warnings
 from tqdm import tqdm
 import numpy as np
 import argparse
@@ -160,6 +161,7 @@ def parse_args():
 
 
 if __name__ == '__main__':
+    warnings.filterwarnings("ignore")
     args = parse_args()
     config = utils.config.load(args.config_file)
     print(config)

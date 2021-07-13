@@ -146,7 +146,7 @@ class OD_SIIM(Dataset):
         # get image
         one_image = self.dicom2array(image_path)
         # stack to 3d image
-        image = np.dstack(one_image, one_image, one_image)
+        image = np.dstack((one_image, one_image, one_image))
         # get boxes and labels
         boxes, labels = self.load_bbox_labels(image_id, image.shape)
         # target
