@@ -34,7 +34,7 @@ metric:
 optimiser:
   name: 'sgd'
   params:
-    lr: 0.008
+    lr: 0.001
 
 scheduler:
   name: 'step'
