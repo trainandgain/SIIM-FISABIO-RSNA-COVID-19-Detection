@@ -122,7 +122,7 @@ class OD_SIIM(Dataset):
         return data.astype(np.float32)
     
     def load_bbox_labels(self, image_id, shape):
-        row, col = shape
+        row, col, channel = shape
         records = self.df[self.df['id'] == image_id]
         boxes = []
         for box in records.boxes.values:
