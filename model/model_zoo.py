@@ -148,7 +148,7 @@ class Identity2(nn.Module):
         format_string += '\n)'
         return format_string
 
-class FasterRCNNDetector(torch.nn.Module):
+class FasterRCNNDetector_1_channel(torch.nn.Module):
     def __init__(self, pretrained=False, **kwargs):
         super(FasterRCNNDetector, self).__init__()
         # load pre-trained model incl. head
@@ -167,6 +167,22 @@ class FasterRCNNDetector(torch.nn.Module):
         
     def forward(self, images, targets=None):
         return self.model(images, targets)
+
+
+class FasterRCNNDetector(torch.nn.Module):
+    def __init__(self, pretrained=False, **kwargs):
+        super(FasterRCNNDetector, self).__init__()
+        # load pre-trained model incl. head
+        self.model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=pretrained, 
+                                                                          pretrained_backbone=pretrained)
+        # get number of input features for the classifier custom head
+        in_features = self.model.roi_heads.box_predictor.cls_score.in_features
+        # replace the pre-trained head with a new one
+        self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, 4)
+        
+    def forward(self, images, targets=None):
+        return self.model(images, targets)
+
 
 def model(name):
     f = globals().get(name)
