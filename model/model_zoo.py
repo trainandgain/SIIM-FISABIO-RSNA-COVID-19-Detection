@@ -51,7 +51,7 @@ class Identity2(nn.Module):
     def __init__(self, size_divisible=32):
         super(Identity2, self).__init__()
         self.size_divisible = size_divisible
-        
+
     def forward(self,
                 images,       # type: List[Tensor]
                 targets=None  # type: Optional[List[Dict[str, Tensor]]]
@@ -90,7 +90,7 @@ class Identity2(nn.Module):
 
         image_list = ImageList(images, image_sizes_list)
         return image_list, targets
-    
+
     def batch_images(self, images, size_divisible=32):
         # type: (List[Tensor], int) -> Tensor
         if torchvision._is_tracing():
@@ -110,7 +110,7 @@ class Identity2(nn.Module):
             pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
 
         return batched_imgs
-    
+
     def max_by_axis(self, the_list):
         # type: (List[List[int]]) -> List[int]
         maxes = the_list[0]
@@ -118,7 +118,7 @@ class Identity2(nn.Module):
             for index, item in enumerate(sublist):
                 maxes[index] = max(maxes[index], item)
         return maxes
-    
+
     def postprocess(self,
                     result,               # type: List[Dict[str, Tensor]]
                     image_shapes,         # type: List[Tuple[int, int]]
@@ -155,8 +155,8 @@ class FasterRCNNDetector_1_channel(torch.nn.Module):
         self.model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=pretrained, 
                                                                           pretrained_backbone=pretrained)
         # change to 1 channel input
-        self.model.backbone.body.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), 
-                                                   stride=(2, 2), padding=(3, 3), 
+        self.model.backbone.body.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7),
+                                                   stride=(2, 2), padding=(3, 3),
                                                    bias=False)
         # self.model.backbone
         self.model.transform = Identity2()
@@ -164,7 +164,7 @@ class FasterRCNNDetector_1_channel(torch.nn.Module):
         in_features = self.model.roi_heads.box_predictor.cls_score.in_features
         # replace the pre-trained head with a new one
         self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, 4)
-        
+
     def forward(self, images, targets=None):
         return self.model(images, targets)
 
@@ -179,10 +179,9 @@ class FasterRCNNDetector(torch.nn.Module):
         in_features = self.model.roi_heads.box_predictor.cls_score.in_features
         # replace the pre-trained head with a new one
         self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, 4)
-        
+
     def forward(self, images, targets=None):
         return self.model(images, targets)
-
 
 def model(name):
     f = globals().get(name)
