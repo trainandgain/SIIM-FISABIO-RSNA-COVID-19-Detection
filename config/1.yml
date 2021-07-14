@@ -16,6 +16,8 @@ model:
 loop:
   name: 'OD'
 
+loss: 'False'
+
 train:
   dir:
   batch_size: 1

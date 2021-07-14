@@ -24,8 +24,10 @@ def run(config):
     scheduler = get_scheduler(config, optimiser, -1)
     metric = get_metric(config)
     loop = get_loop(config)
-    if config['loss']:
+    if config['loss'] != 'False':
         loss = get_loss(config)
+    else:
+        loss = None
     df = utils.input.get_dfs(config)
     dataloaders = {split:get_dataloader(config, df, split, get_transform(config, split))
                    for split in ['train', 'val']}
