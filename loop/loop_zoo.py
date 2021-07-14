@@ -2,6 +2,7 @@ import torch
 import math
 from tqdm import tqdm
 import utils
+import tracemalloc
 
 def OD(config, model, dataloaders, optimiser, scheduler, device, metric, logman, loss=None):
     def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
@@ -231,9 +232,13 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
     def train(config, model, dataloaders, optimiser, scheduler, device, metric):
         num_epochs = config['train']['num_epochs']
         for epoch in range(num_epochs):
+            tracemalloc.start()
             # train
             final_loss = train_one_cycle(config, model, dataloaders['train'],
                             optimiser, epoch, device)
+            current, peak = tracemalloc.get_traced_memory()
+            print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
+            tracemalloc.stop()
             # val
             final_prec = val_one_cycle(config, model, dataloaders['val'],
                         optimiser, epoch, device, metric)

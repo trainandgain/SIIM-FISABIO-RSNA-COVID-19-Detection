@@ -31,6 +31,7 @@ def run(config):
     df = utils.input.get_dfs(config)
     dataloaders = {split:get_dataloader(config, df, split, get_transform(config, split))
                    for split in ['train', 'val']}
+    # main training loop
     loop(config, model, dataloaders, optimiser, scheduler, DEVICE, metric, logman, loss)
 
 
