@@ -3,6 +3,7 @@ import math
 from tqdm import tqdm
 import utils
 import tracemalloc
+import gc
 
 def OD(config, model, dataloaders, optimiser, scheduler, device, metric, logman, loss=None):
     def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
@@ -182,6 +183,7 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
             del images, tg, losses, train_loss
             # free up cache
             torch.cuda.empty_cache()
+            gc.collect()
             return(train_running_loss)
 
     def val_one_cycle(config, model, dataloader, optimiser, epoch, device, metric):
@@ -226,6 +228,7 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
             # Free up memory
             del images, outputs, gt_boxes, boxes, scores, precision
             torch.cuda.empty_cache()
+            gc.collect()
             return(final_prec)
 
 
