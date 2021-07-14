@@ -1,8 +1,4 @@
-import torch
-import os
 import warnings
-from tqdm import tqdm
-import numpy as np
 import argparse
 import utils
 import utils.config
@@ -21,8 +17,6 @@ from loop.gen_loop import get_loop
 import math
 
 def run(config):
-    # directories
-    input_dir = config['data']['input']
     DEVICE = utils.device.get_device()
     # get elements
     model = get_model(config).to(DEVICE)
@@ -30,7 +24,8 @@ def run(config):
     scheduler = get_scheduler(config, optimiser, -1)
     metric = get_metric(config)
     loop = get_loop(config)
-    loss = get_loss(config)
+    if config['loss']:
+        loss = get_loss(config)
     df = utils.input.get_dfs(config)
     dataloaders = {split:get_dataloader(config, df, split, get_transform(config, split))
                    for split in ['train', 'val']}

@@ -13,6 +13,9 @@ data:
 model:
   name: 'FasterRCNNDetector'
 
+loop:
+  name: 'OD'
+
 train:
   dir:
   batch_size: 1
@@ -20,10 +23,6 @@ train:
   gradient_clipping:
     params:
       clip_value: 1.0
-
-
-loss:
-  name: ''
 
 metric:
   name: "image_precision"
