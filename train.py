@@ -12,6 +12,7 @@ import utils.checkpoint
 from utils.logs import Logman
 from model.gen_model import get_model
 from metric.gen_metric import get_metric
+from loss.gen_loss import get_loss
 from dataset.gen_dataloader import get_dataloader
 from optimiser.gen_optimiser import get_optimiser
 from scheduler.gen_scheduler  import get_scheduler
@@ -29,10 +30,11 @@ def run(config):
     scheduler = get_scheduler(config, optimiser, -1)
     metric = get_metric(config)
     loop = get_loop(config)
+    loss = get_loss(config)
     df = utils.input.get_dfs(config)
     dataloaders = {split:get_dataloader(config, df, split, get_transform(config, split))
                    for split in ['train', 'val']}
-    loop(config, model, dataloaders, optimiser, scheduler, DEVICE, metric, logman)
+    loop(config, model, dataloaders, optimiser, scheduler, DEVICE, metric, logman, loss)
 
 
 def parse_args():

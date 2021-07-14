@@ -5,7 +5,7 @@ import warnings
 from tqdm import tqdm
 import utils
 
-def OD(config, model, dataloaders, optimiser, scheduler, device, metric, logman):
+def OD(config, model, dataloaders, optimiser, scheduler, device, metric, logman, loss=None):
     def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
         """
         Run one epoch of training, backpropogation and optimisation.
