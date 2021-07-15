@@ -113,11 +113,19 @@ def OD(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
         num_epochs = config['train']['num_epochs']
         for epoch in range(num_epochs):
             # train
+            tracemalloc.start()
             final_loss = train_one_cycle(config, model, dataloaders['train'],
                             optimiser, epoch, device)
+            current, peak = tracemalloc.get_traced_memory()
+            print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
+            tracemalloc.stop()
             # val
+            tracemalloc.start()
             final_prec = val_one_cycle(config, model, dataloaders['val'],
                         optimiser, epoch, device, metric)
+            current, peak = tracemalloc.get_traced_memory()
+            print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
+            tracemalloc.stop()
             # scheduler
             if scheduler:
                 scheduler.step()
@@ -180,7 +188,7 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
             print(f"Final Training Loss: {train_running_loss:.4f}")
 
             # free memory
-            del images, tg, losses, train_loss
+            del images, targets, train_loss
             # free up cache
             torch.cuda.empty_cache()
             gc.collect()
@@ -235,13 +243,10 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
     def train(config, model, dataloaders, optimiser, scheduler, device, metric):
         num_epochs = config['train']['num_epochs']
         for epoch in range(num_epochs):
-            tracemalloc.start()
             # train
             final_loss = train_one_cycle(config, model, dataloaders['train'],
                             optimiser, epoch, device)
             current, peak = tracemalloc.get_traced_memory()
-            print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
-            tracemalloc.stop()
             # val
             final_prec = val_one_cycle(config, model, dataloaders['val'],
                         optimiser, epoch, device, metric)
