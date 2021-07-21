@@ -113,19 +113,11 @@ def OD(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
         num_epochs = config['train']['num_epochs']
         for epoch in range(num_epochs):
             # train
-            tracemalloc.start()
             final_loss = train_one_cycle(config, model, dataloaders['train'],
                             optimiser, epoch, device)
-            current, peak = tracemalloc.get_traced_memory()
-            print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
-            tracemalloc.stop()
             # val
-            tracemalloc.start()
             final_prec = val_one_cycle(config, model, dataloaders['val'],
                         optimiser, epoch, device, metric)
-            current, peak = tracemalloc.get_traced_memory()
-            print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
-            tracemalloc.stop()
             # scheduler
             if scheduler:
                 scheduler.step()

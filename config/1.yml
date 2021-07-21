@@ -21,7 +21,7 @@ loss: 'False'
 train:
   dir:
   batch_size: 1
-  num_epochs: 8
+  num_epochs: 20
   gradient_clipping:
     params:
       clip_value: 1.0

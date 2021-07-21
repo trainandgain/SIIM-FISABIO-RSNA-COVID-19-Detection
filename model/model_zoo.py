@@ -170,7 +170,7 @@ class FasterRCNNDetector_1_channel(torch.nn.Module):
 
 
 class FasterRCNNDetector(torch.nn.Module):
-    def __init__(self, pretrained=False, **kwargs):
+    def __init__(self, pretrained=True, **kwargs):
         super(FasterRCNNDetector, self).__init__()
         # load pre-trained model incl. head
         self.model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=pretrained, 
