@@ -1,0 +1,54 @@
+config:
+  title: "Three channel image version"
+
+data:
+  name: 'IC_SIIM'
+  input: 'C:\Users\Admin\Git\SIIM\train'
+  df:
+    path: 'input/id_s.csv'
+  collate_name: 'None'
+  params:
+    val_fold: 4
+
+model:
+  name: 'EfficientNETB2'
+  params:
+    NUM_CLASSES: 4
+
+loop:
+  name: 'IC'
+
+loss:
+  name: "FocalLoss"
+
+train:
+  dir:
+  batch_size: 1
+  num_epochs: 20
+  gradient_clipping:
+    params:
+      clip_value: 1.0
+
+metric:
+  name: "evals"
+
+optimiser:
+  name: 'sgd'
+  params:
+    lr: 0.001
+
+scheduler:
+  name: 'step'
+  params:
+    step_size: 5
+
+transform:
+  name: 'IC'
+  width: 800
+  height: 800
+  params:
+    reshape_size: 800
+
+output:
+  dir: 'out/'
+

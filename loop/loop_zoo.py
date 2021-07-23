@@ -133,7 +133,7 @@ def OD(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
 
 
 def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman, loss=None):
-    def train_one_cycle(config, model, dataloader, optimiser, epoch, device):
+    def train_one_cycle(config, model, dataloader, optimiser, epoch, device, loss):
         """
         Run one epoch of training, backpropogation and optimisation.
         """
@@ -157,7 +157,7 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
                 # get outputs
                 out = model(images)
                 # training
-                train_loss = loss(out, labels)
+                train_loss = loss(out, labels.float())
                 # Backpropogation
                 train_loss.backward()
                 # gradient clipping
@@ -184,7 +184,7 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
             print(f"Final Training Loss: {train_running_loss:.4f}")
 
             # free memory
-            del images, targets, train_loss
+            del images, labels, out
             # free up cache
             torch.cuda.empty_cache()
             gc.collect()
@@ -201,13 +201,14 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
         len_dataset = len(dataloader.dataset)
         step = math.ceil(len_dataset / batch_size)
         valid_prog_bar = tqdm(dataloader, total=step)
-        running_prec = 0
+        running_loss = 0
         all_valid_labels = []
         all_valid_preds = []
         with torch.no_grad():
             for batch_num, (images, labels, idx) in enumerate(valid_prog_bar):
                 # send to devices
                 images = images.to(device)
+                labels = labels.to(device)
                 # get predictions
                 out = model(images)
                 # loss fn
@@ -222,9 +223,9 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
                                 'batch': batch_num, 
                                 'loss': val_loss.item()
                             })
-            final_prec = running_prec / step      
-            print(f"Validation metric: {final_prec:.4f}")
-            accuracy, recall, precision, f1_score = evals(all_valid_labels, all_valid_preds)
+            final_loss = running_loss / step      
+            print(f"Validation metric: {final_loss:.4f}")
+            accuracy, recall, precision, f1_score = metric(all_valid_labels, all_valid_preds)
             if logman:
                 logman.log({'type': 'val_metric', 
                                  'epoch': epoch,
@@ -234,22 +235,22 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
                                  'precision': precision,
                                  'f1_score': f1_score})
             # Free up memory
-            del images, outputs, accuracy, recall, precision, f1_score, targets
+            del images, out, accuracy, recall, precision, f1_score, labels
             torch.cuda.empty_cache()
             gc.collect()
-            return(final_prec)
+            return(final_loss)
 
 
-    def train(config, model, dataloaders, optimiser, scheduler, device, metric):
+    def train(config, model, dataloaders, optimiser, scheduler, device, loss, metric):
         num_epochs = config['train']['num_epochs']
         for epoch in range(num_epochs):
             # train
             final_loss = train_one_cycle(config, model, dataloaders['train'],
-                            optimiser, epoch, device)
+                            optimiser, epoch, device, loss)
             current, peak = tracemalloc.get_traced_memory()
             # val
             final_prec = val_one_cycle(config, model, dataloaders['val'],
-                        optimiser, epoch, device, metric)
+                        optimiser, epoch, device, loss, metric)
             # scheduler
             if scheduler:
                 scheduler.step()
@@ -257,7 +258,7 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
         # end logging
         logman.log({'type': 'final'})
 
-    train(config, model, dataloaders, optimiser, scheduler, device, metric)
+    train(config, model, dataloaders, optimiser, scheduler, device, loss, metric)
 
 
 def loop(name):
