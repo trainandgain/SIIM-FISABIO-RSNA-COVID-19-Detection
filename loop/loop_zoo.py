@@ -58,9 +58,9 @@ def OD(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
             train_running_loss = running_loss / step
             print(f"Final Training Loss: {train_running_loss:.4f}")
 
-            # free memory
-            del images, tg, losses, train_loss
+             # free memory
             images, tg, losses, train_loss = None, None, None, None
+            del images, tg, losses, train_loss
             # free up cache
             torch.cuda.empty_cache()
             gc.collect()
@@ -106,8 +106,8 @@ def OD(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
             final_prec = running_prec / step      
             print(f"Validation metric: {final_prec:.4f}")
             # Free up memory
-            del images, outputs, gt_boxes, boxes, scores, precision
             images, outputs, gt_boxes, boxes, scores, precision = None, None, None, None, None, None
+            del images, outputs, gt_boxes, boxes, scores, precision
             torch.cuda.empty_cache()
             gc.collect()
             return(final_prec)

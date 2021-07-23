@@ -3,24 +3,22 @@ import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2, ToTensor
 
 def train(config):
-    return(A.Compose([
-        A.Resize(height=config['transform']['params']['reshape_size'], width=config['transform']['params']['reshape_size'],
-            p=1.0),
-        A.HorizontalFlip(p=0.5),
-        A.VerticalFlip(p=0.5),
-        A.OneOf([A.RandomBrightnessContrast(brightness_limit=0.4,
-                                  contrast_limit=0.4, p=0.3),
-                 A.RandomGamma(gamma_limit=(50, 300), eps=None, always_apply=False,
-                      p=0.3)], p=0.2),
-        ToTensorV2(p=1.0)],
-        bbox_params={'format': 'pascal_voc', 'label_fields': ['labels']}))
+    return(A.Compose([A.RandomRotate90(p=0.1), A.Flip(p=0.1),
+        A.OneOf([
+            A.MotionBlur(p=.2),
+            A.MedianBlur(blur_limit=3, p=0.1),
+            A.Blur(blur_limit=3, p=0.1),
+        ], p=0.2),
+        A.OneOf([
+            A.RandomBrightnessContrast(),            
+        ], p=0.3),
+        A.Resize(height=800, width=800, p=1.0)],
+        bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels'])))
 
 
 def val(config):
-    return(A.Compose([A.Resize(height=config['transform']['params']['reshape_size'],
-                                width=config['transform']['params']['reshape_size']),
-                             ToTensorV2(p=1.0)],
-        bbox_params={'format': 'pascal_voc', 'label_fields': ['labels']}))
+    return(A.Compose([A.Resize(height=800, width=800, p=1.0)], 
+    bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels'])))
 
 
 
