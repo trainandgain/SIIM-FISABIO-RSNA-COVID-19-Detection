@@ -24,9 +24,9 @@ def get_dataloader(config, df, split, transform=None):
     else:
         collate_fn = None
     if split == 'train':
-        id_s = df[df.fold!=config['data']['params']['val_fold']].id.values[:10]
+        id_s = df[df.fold!=config['data']['params']['val_fold']].id.values
     else:
-        id_s = df[df.fold==config['data']['params']['val_fold']].id.values[:10]
+        id_s = df[df.fold==config['data']['params']['val_fold']].id.values
     dataloader = DataLoader(get_dataset(config['data']['name'], df, id_s, transform),
                             collate_fn=collate_fn, 
                             batch_size=config['train']['batch_size'])                    
