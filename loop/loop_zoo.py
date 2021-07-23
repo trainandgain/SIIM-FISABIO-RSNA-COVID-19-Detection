@@ -148,16 +148,16 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
         running_loss = 0
 
         with torch.set_grad_enabled(True):
-            for batch_num, (images, targets, idx) in enumerate(train_prog_bar):
+            for batch_num, (images, labels, idx) in enumerate(train_prog_bar):
                 # zero gradient optim
                 optimiser.zero_grad()
                 # send to devices
                 images = images.to(device)
-                targets = targets.to(device)
+                labels = labels.to(device)
                 # get outputs
-                out = model(images, targets)
+                out = model(images)
                 # training
-                train_loss = loss(out, targets)
+                train_loss = loss(out, labels)
                 # Backpropogation
                 train_loss.backward()
                 # gradient clipping
@@ -190,7 +190,7 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
             gc.collect()
             return(train_running_loss)
 
-    def val_one_cycle(config, model, dataloader, optimiser, epoch, device, metric):
+    def val_one_cycle(config, model, dataloader, optimiser, epoch, device, loss, metric):
         """
             Runs one epoch of prediction.
             In model.train() mode, model(images)  is returning losses.
@@ -202,35 +202,39 @@ def IC(config, model, dataloaders, optimiser, scheduler, device, metric, logman,
         step = math.ceil(len_dataset / batch_size)
         valid_prog_bar = tqdm(dataloader, total=step)
         running_prec = 0
+        all_valid_labels = []
+        all_valid_preds = []
         with torch.no_grad():
-            for batch_num, (images, targets, idx) in enumerate(valid_prog_bar):
+            for batch_num, (images, labels, idx) in enumerate(valid_prog_bar):
                 # send to devices
                 images = images.to(device)
                 # get predictions
-                outputs = model(images)
-                # get metric
-                for i, image in enumerate(images):
-                    gt_boxes = targets[i]['boxes'].data.cpu().numpy()
-                    boxes = outputs[i]['boxes'].data.cpu().numpy()
-                    scores = outputs[i]['scores'].detach().cpu().numpy()
-                    precision = metric(boxes, scores, gt_boxes, config)
-                    running_prec += precision
-                    # logging
-                    if logman:
-                        logman.log({'type': 'val', 
-                                    'epoch': epoch, 
-                                    'batch': batch_num, 
-                                    'image_precision': precision,
-                                })
-                    # Show the current metric
-                    valid_pbar_desc = f"Current Precision: {precision:.4f}"
-                    valid_prog_bar.set_description(desc=valid_pbar_desc)
-                    running_prec += precision
-                    
+                out = model(images)
+                # loss fn
+                val_loss = loss(out, labels.float())
+                running_loss += val_loss.item()
+                # metric
+                all_valid_labels += [out.flatten().detach().cpu().numpy()]
+                all_valid_preds += [labels.flatten().detach().cpu().numpy()]
+                if logman:
+                    logman.log({'type': 'val', 
+                                'epoch': epoch, 
+                                'batch': batch_num, 
+                                'loss': val_loss.item()
+                            })
             final_prec = running_prec / step      
             print(f"Validation metric: {final_prec:.4f}")
+            accuracy, recall, precision, f1_score = evals(all_valid_labels, all_valid_preds)
+            if logman:
+                logman.log({'type': 'val_metric', 
+                                 'epoch': epoch,
+                                 'batch': batch_num, 
+                                 'accuracy': accuracy,
+                                 'recall': recall,
+                                 'precision': precision,
+                                 'f1_score': f1_score})
             # Free up memory
-            del images, outputs, gt_boxes, boxes, scores, precision
+            del images, outputs, accuracy, recall, precision, f1_score, targets
             torch.cuda.empty_cache()
             gc.collect()
             return(final_prec)

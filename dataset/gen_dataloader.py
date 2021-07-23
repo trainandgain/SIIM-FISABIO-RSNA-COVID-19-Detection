@@ -19,7 +19,7 @@ def get_dataloader(config, df, split, transform=None):
     """
     Input config and split.
     """
-    if config['data']['collate_name']:
+    if config['data']['collate_name'] != 'None':
         collate_fn = get_collate(config['data']['collate_name'])
     else:
         collate_fn = None

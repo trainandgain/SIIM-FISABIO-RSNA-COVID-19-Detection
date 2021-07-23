@@ -173,6 +173,22 @@ def image_precision(boxes, scores, gt_boxes, config):
                                             thresholds=config['metric']['params']['iou_thresholds'],
                                             form=config['metric']['params']['form']))
 
+def evals(true, preds):
+    # convert with threshold
+    tp, tn, fp, fn = 0, 0, 0, 0
+    for t, p in zip(true, preds):
+        pred = (p>0.5).astype(int)
+        tp += (t * pred).sum().astype(np.float32)
+        tn += ((1 - t) * (1 - p)).sum().astype(np.float32)
+        fp += ((1 - t) * p).sum().astype(np.float32)
+        fn += (t * (1 - p)).sum().astype(np.float32)
+        
+    accuracy = (tp + tn) / (tp + tn + fp + fn)
+    recall = (tp) / (tp + fn)
+    precision = (tp) / (tp + fp)
+    f1_score = (2*tp) / (2*tp + fp + fn)
+    return(accuracy, recall, precision, f1_score)
+    
 def metric(name):
     f = globals().get(name)
     return f
